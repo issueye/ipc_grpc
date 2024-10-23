@@ -1,0 +1,101 @@
+// 指定proto版本
+syntax = "proto3";
+// 指定默认包名
+package pb;
+// 指定golang包名
+option go_package = "/pb";
+
+message Empty {}
+
+// 插件信息
+message InfoRequest {
+    string version = 1;      // 版本号
+    string appName = 2;      // 程序名称
+    string gitHash = 3;      // git hash
+    string gitBranch = 4;    // git 分支
+    string buildTime = 5;    // 构建时间
+    string goVersion = 6;    // go 版本
+    string cookieKey = 7;    // cookie key
+    string cookieValue = 8;  // cookie value
+}
+
+// 网络检查
+message PingResponse {
+    string message = 1;    // 返回消息  返回 pong
+    int64 timestamp = 2;   // 时间戳 返回当前服务的时间戳
+}
+
+// 心跳检测
+message HeartbeatRequest {
+    string message = 1;         // 返回消息
+    int64 timestamp = 2;        // 时间戳
+    float memoryUsage = 3;      // 内存使用情况
+    float cpuUsage = 4;         // CPU使用情况
+}
+
+// 服务请求
+message ServerRequest {
+    string id = 1;  // 服务id
+}
+
+// 状态返回
+message StatusResponse {
+    string status = 1;  // 状态
+}
+
+// 服务状态
+message ServerInfo {
+    string id = 1;              // 服务id
+    string name = 2;            // 服务名称
+    string processName = 3;     // 进程名称
+    string processId = 4;       // 进程id
+    string status = 5;          // 状态
+    string startTime = 6;       // 启动时间
+    string stopTime = 7;        // 停止时间
+    string lastHeartbeatTime = 8; // 最后心跳时间    
+}
+
+message ListResponse {
+    repeated ServerInfo servers = 1;  // 服务列表
+}
+
+// 事件枚举
+enum EventType {
+    START = 0;  // 服务启动
+    STOP = 1;  // 服务停止
+    REMOVE = 2;  // 服务移除
+    ADD = 3;   // 服务添加
+    SETTING_OK = 4;  // 服务配置成功
+}
+
+// 事件推送
+message EventResponse {
+    EventType type = 1;  // 事件类型
+    ServerInfo server = 2;  // 服务信息
+}
+
+// 公共服务
+service CommonHelper {
+    // 测试网络
+    rpc Ping(Empty) returns (PingResponse);
+    // 获取插件信息
+    rpc SendInfo (InfoRequest) returns (Empty);
+    // 心跳检测
+    rpc Heartbeat(stream HeartbeatRequest) returns (Empty);
+}
+
+// 宿主为插件提供的服务
+service HostHelper {
+    // 服务状态
+    rpc Status(ServerRequest) returns (StatusResponse);
+    // 服务停止
+    rpc Stop(ServerRequest) returns (Empty);
+    // 服务启动
+    rpc Start(ServerRequest) returns (Empty);
+    // 服务重启
+    rpc Restart(ServerRequest) returns (Empty);
+    // 服务列表
+    rpc List(Empty) returns (ListResponse);
+    // 事件推送，服务端持续推送事件
+    rpc Event(Empty) returns (stream EventResponse);
+}
