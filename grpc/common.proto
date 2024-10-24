@@ -20,17 +20,23 @@ message InfoRequest {
 }
 
 // 网络检查
-message PingResponse {
+message PubResponse {
     string message = 1;    // 返回消息  返回 pong
     int64 timestamp = 2;   // 时间戳 返回当前服务的时间戳
 }
 
+message CookieRequest {
+    string cookieKey = 1;  // cookie key
+    string cookieValue = 2; // cookie value
+} 
+
 // 心跳检测
 message HeartbeatRequest {
-    string message = 1;         // 返回消息
-    int64 timestamp = 2;        // 时间戳
-    float memoryUsage = 3;      // 内存使用情况
-    float cpuUsage = 4;         // CPU使用情况
+    string cookieKey = 1;       // cookie key
+    string message = 2;         // 返回消息
+    int64 timestamp = 3;        // 时间戳
+    float memoryUsage = 4;      // 内存使用情况
+    float cpuUsage = 5;         // CPU使用情况
 }
 
 // 服务请求
@@ -77,11 +83,11 @@ message EventResponse {
 // 公共服务
 service CommonHelper {
     // 测试网络
-    rpc Ping(Empty) returns (PingResponse);
+    rpc Ping(Empty) returns (PubResponse);
     // 获取插件信息
-    rpc SendInfo (InfoRequest) returns (Empty);
+    rpc Register (InfoRequest) returns (PubResponse);
     // 心跳检测
-    rpc Heartbeat(stream HeartbeatRequest) returns (Empty);
+    rpc Heartbeat(stream HeartbeatRequest) returns (PubResponse);
 }
 
 // 宿主为插件提供的服务

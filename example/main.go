@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -11,7 +12,18 @@ import (
 
 func main() {
 
-	go server.NewServer(&server.Host{})
+	var (
+		srv *server.Server
+		err error
+	)
+
+	srv, err = server.NewServer(true, &server.Host{}, func(pi server.PluginInfo) error {
+		// return errors.New("检查不通过")
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	c, err := client.NewClient()
 	if err != nil {
@@ -27,15 +39,24 @@ func main() {
 
 	fmt.Println(pingResp.Message, pingResp.Timestamp)
 
-	err = c.Heartbeat()
+	err = c.Register()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = c.SendInfo()
+	go func() {
+		err = c.Heartbeat()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	time.Sleep(20 * time.Second)
+
+	data, err := json.Marshal(srv.Plugins)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	time.Sleep(30 * time.Second)
+	fmt.Println(string(data))
 }

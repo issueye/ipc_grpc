@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	pb "github.com/issueye/ipc_grpc/grpc/pb" // 替换为你的 proto 生成代码路径
 	"github.com/issueye/ipc_grpc/vars"
 
 	"github.com/Microsoft/go-winio"
+	"github.com/shirou/gopsutil/v4/process"
 	"google.golang.org/grpc"
 )
 
@@ -26,7 +28,7 @@ type Client struct {
 func NewClient() (*Client, error) {
 	client := &Client{}
 
-	// 创建 gRPC 连接
+	// 创建 gRPC 连接 (使用 Windows Named Pipe)
 	grpcConn, err := grpc.Dial(
 		"",
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
@@ -77,26 +79,26 @@ func (c *Client) GetConn() *grpc.ClientConn {
 	return c.grpcConn
 }
 
-func (c *Client) Ping() (*pb.PingResponse, error) {
+func (c *Client) Ping() (*pb.PubResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.GetTimeOut())
 	defer cancel()
 
 	return c.commonHelper.Ping(ctx, &pb.Empty{})
 }
 
-func (c *Client) SendInfo() error {
+func (c *Client) Register() error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.GetTimeOut())
 	defer cancel()
 
-	_, err := c.commonHelper.SendInfo(ctx, &pb.InfoRequest{
-		Version:     vars.Version,     // 版本号
-		AppName:     vars.AppName,     // 应用名称
-		GitHash:     vars.GitHash,     // git hash
-		GitBranch:   vars.GitBranch,   // git branch
-		BuildTime:   vars.BuildTime,   // 构建时间
-		GoVersion:   vars.GoVersion,   // go版本
-		CookieKey:   vars.CookieKey,   // cookie key
-		CookieValue: vars.CookieValue, // cookie value
+	_, err := c.commonHelper.Register(ctx, &pb.InfoRequest{
+		Version:     vars.Version,   // 版本号
+		AppName:     vars.AppName,   // 应用名称
+		GitHash:     vars.GitHash,   // git hash
+		GitBranch:   vars.GitBranch, // git branch
+		BuildTime:   vars.BuildTime, // 构建时间
+		GoVersion:   vars.GoVersion, // go版本
+		CookieKey:   "test",         // cookie key
+		CookieValue: "test",         // cookie value
 	})
 
 	return err
@@ -113,44 +115,86 @@ func (c *Client) Heartbeat() error {
 	// 允许失败3次
 	i := 0
 
-	go func() {
-		interval := c.heartbeatInterval
-		if interval == 0 {
-			interval = time.Second * 10
+	interval := c.heartbeatInterval
+	if interval == 0 {
+		interval = time.Second * 10
+	}
+
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+		info, err := GetClientState()
+		if err != nil {
+			fmt.Println("获取客户端状态失败", err.Error())
+			continue
 		}
 
-		ticker := time.NewTicker(interval)
-		for range ticker.C {
+		// 获取CPU使用率
+		// 获取内存使用率
+		err = stream.Send(&pb.HeartbeatRequest{
+			CookieKey:   "test",
+			Message:     "ping",
+			Timestamp:   time.Now().Unix(),
+			MemoryUsage: info.MemoryUsage,
+			CpuUsage:    info.CpuUsage,
+		})
 
-			fmt.Println("开始发送心跳")
-
-			// 获取CPU使用率
-			// 获取内存使用率
-			err := stream.Send(&pb.HeartbeatRequest{
-				Message:     "ping",
-				Timestamp:   time.Now().Unix(),
-				MemoryUsage: 0,
-				CpuUsage:    0,
-			})
-
-			if err != nil {
-				i++
-				if i >= 3 {
-					ticker.Stop()
-				}
-
-				fmt.Println("心跳发送失败", err.Error())
-				continue
+		if err != nil {
+			i++
+			if i >= 3 {
+				ticker.Stop()
 			}
 
-			fmt.Println("心跳发送成功")
-
-			// 如果发送成功，则重置计数器
-			i = 0
+			continue
 		}
-
-		fmt.Println("心跳发送结束")
-	}()
+		// 如果发送成功，则重置计数器
+		i = 0
+	}
 
 	return nil
+}
+
+type StateInfo struct {
+	Pid         int
+	ProcessName string
+	CpuUsage    float32
+	MemoryUsage float32
+}
+
+func GetClientState() (*StateInfo, error) {
+	pid := os.Getpid()
+
+	list, err := process.Processes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := &StateInfo{
+		Pid: pid,
+	}
+
+	for _, p := range list {
+		name, err := p.Name()
+		if err != nil {
+			continue
+		}
+
+		info.ProcessName = name
+
+		if p.Pid == int32(pid) {
+			cpu, err := p.CPUPercent()
+			if err == nil {
+				info.CpuUsage = float32(cpu)
+			}
+
+			// 获取内存使用率
+			mem, err := p.MemoryInfo()
+			if err == nil {
+				info.MemoryUsage = float32(mem.RSS)
+			}
+
+			break
+		}
+	}
+
+	return info, nil
 }
