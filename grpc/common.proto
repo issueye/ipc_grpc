@@ -19,6 +19,10 @@ message InfoRequest {
     string cookieValue = 8;  // cookie value
 }
 
+message ClientRequest {
+    string cookieKey = 7;    // cookie key
+}
+
 // 网络检查
 message PubResponse {
     string message = 1;    // 返回消息  返回 pong
@@ -107,7 +111,7 @@ service HostHelper {
     // 服务列表
     rpc List(Empty) returns (ListResponse);
     // 事件推送，服务端持续推送事件
-    rpc Event(Empty) returns (stream EventResponse);
+    rpc Event(ClientRequest) returns (stream EventResponse);
     // 监听服务端发送的命令
-    rpc Command(Empty) returns (stream CommandResponse);
+    rpc Command(ClientRequest) returns (stream CommandResponse);
 }

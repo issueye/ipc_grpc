@@ -226,11 +226,11 @@ func (*Host) List(context.Context, *pb.Empty) (*pb.ListResponse, error) {
 }
 
 // 事件推送，服务端持续推送事件
-func (*Host) Event(*pb.Empty, pb.HostHelper_EventServer) error {
+func (*Host) Event(*pb.ClientRequest, pb.HostHelper_EventServer) error {
 	return nil
 }
 
 // 事件推送，服务端持续推送事件
-func (*Host) Command(*pb.Empty, pb.HostHelper_CommandServer) error {
+func (*Host) Command(*pb.ClientRequest, pb.HostHelper_CommandServer) error {
 	return nil
 }
