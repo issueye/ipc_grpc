@@ -1,6 +1,6 @@
 module github.com/issueye/ipc_grpc
 
-go 1.23.0
+go 1.21.6
 
 require (
 	github.com/Microsoft/go-winio v0.6.2

@@ -80,6 +80,10 @@ message EventResponse {
     ServerInfo server = 2;  // 服务信息
 }
 
+message CommandResponse {
+    string command = 1;  // 命令
+}
+
 // 公共服务
 service CommonHelper {
     // 测试网络
@@ -104,4 +108,6 @@ service HostHelper {
     rpc List(Empty) returns (ListResponse);
     // 事件推送，服务端持续推送事件
     rpc Event(Empty) returns (stream EventResponse);
+    // 监听服务端发送的命令
+    rpc Command(Empty) returns (stream CommandResponse);
 }

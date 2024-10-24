@@ -229,3 +229,8 @@ func (*Host) List(context.Context, *pb.Empty) (*pb.ListResponse, error) {
 func (*Host) Event(*pb.Empty, pb.HostHelper_EventServer) error {
 	return nil
 }
+
+// 事件推送，服务端持续推送事件
+func (*Host) Command(*pb.Empty, pb.HostHelper_CommandServer) error {
+	return nil
+}
