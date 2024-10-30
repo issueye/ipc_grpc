@@ -107,7 +107,7 @@ func (s *CommonHelpServer) Heartbeat(stream pb.CommonHelper_HeartbeatServer) err
 			return stream.SendAndClose(&pb.PubResponse{Message: err.Error(), Timestamp: time.Now().Unix()})
 		}
 
-		fmt.Printf("收到心跳包，cookie key：%s  内存使用：%.2f MB\n", req.CookieKey, req.MemoryUsage/1024.0/1024.0)
+		fmt.Printf("收到心跳包，cookie key：%s  内存使用：%.2f MB CPU使用: %.2f\n", req.CookieKey, req.MemoryUsage/1024.0/1024.0, req.CpuUsage/100.0)
 		state.LastHeartbeatTime = time.Now().Unix()
 		state.State = 1
 

@@ -91,14 +91,14 @@ func (c *Client) Register() error {
 	defer cancel()
 
 	_, err := c.commonHelper.Register(ctx, &pb.InfoRequest{
-		Version:     vars.Version,   // 版本号
-		AppName:     vars.AppName,   // 应用名称
-		GitHash:     vars.GitHash,   // git hash
-		GitBranch:   vars.GitBranch, // git branch
-		BuildTime:   vars.BuildTime, // 构建时间
-		GoVersion:   vars.GoVersion, // go版本
-		CookieKey:   "test",         // cookie key
-		CookieValue: "test",         // cookie value
+		Version:     vars.Version,     // 版本号
+		AppName:     vars.AppName,     // 应用名称
+		GitHash:     vars.GitHash,     // git hash
+		GitBranch:   vars.GitBranch,   // git branch
+		BuildTime:   vars.BuildTime,   // 构建时间
+		GoVersion:   vars.GoVersion,   // go版本
+		CookieKey:   vars.CookieKey,   // cookie key
+		CookieValue: vars.CookieValue, // cookie value
 	})
 
 	return err
@@ -131,7 +131,7 @@ func (c *Client) Heartbeat() error {
 		// 获取CPU使用率
 		// 获取内存使用率
 		err = stream.Send(&pb.HeartbeatRequest{
-			CookieKey:   "test",
+			CookieKey:   vars.CookieKey,
 			Message:     "ping",
 			Timestamp:   time.Now().Unix(),
 			MemoryUsage: info.MemoryUsage,
